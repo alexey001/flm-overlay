@@ -1,0 +1,4 @@
+# Локальные USE-флаги overlay
+dev-db/postgresql:1c - Патч 1C_FULL (совместимость с 1С:Enterprise); не тестировался в комбинации с TimescaleDB
+dev-db/postgresql:lto - Сборка сервера с LTO (-flto)
+dev-db/timescaledb:lto - Сборка расширения с LTO (-DUSE_LTO=ON)

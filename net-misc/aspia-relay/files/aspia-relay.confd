@@ -1,0 +1,9 @@
+# /etc/conf.d/aspia-relay — переменные окружения демона Aspia Relay.
+#
+# Конфиг: /etc/aspia/relay.conf (переопределить: ASPIA_RELAY_CONFIG_FILE)
+# Логи:   stdout при ASPIA_LOG_TO_STDOUT=1; файлы /var/log/aspia/relay при
+#         ASPIA_LOG_TO_FILE=1 (файловое логирование включено по умолчанию)
+#
+#ASPIA_LOG_LEVEL=3
+ASPIA_LOG_TO_STDOUT=1
+ASPIA_LOG_TO_FILE=0

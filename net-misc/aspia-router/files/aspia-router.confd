@@ -1,0 +1,11 @@
+# /etc/conf.d/aspia-router — переменные окружения демона Aspia Router.
+#
+# Конфиг:  /etc/aspia/router.conf (переопределить: ASPIA_ROUTER_CONFIG_FILE)
+# База:    /var/lib/aspia/router.db3 (переопределить: ASPIA_ROUTER_DB_FILE)
+# Логи:    stdout при ASPIA_LOG_TO_STDOUT=1; файлы /var/log/aspia/router при
+#          ASPIA_LOG_TO_FILE=1 (файловое логирование включено по умолчанию)
+#
+# Уровень логирования: 1=trace 2=debug 3=info 4=warning 5=error 6=fatal
+#ASPIA_LOG_LEVEL=3
+ASPIA_LOG_TO_STDOUT=1
+ASPIA_LOG_TO_FILE=0

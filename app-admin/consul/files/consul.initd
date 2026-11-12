@@ -1,0 +1,16 @@
+#!/sbin/openrc-run
+# HashiCorp Consul в foreground (агент; конфиг /etc/consul.d/*.hcl).
+
+description="HashiCorp Consul - service discovery and configuration"
+
+command="/usr/bin/consul"
+command_args="agent -config-dir=/etc/consul.d ${CONSUL_OPTS}"
+command_user="${CONSUL_USER:-consul:consul}"
+supervise_daemon_args="-d /var/lib/consul"
+output_logger="logger -t consul -p daemon.info"
+error_logger="logger -t consul -p daemon.err"
+
+depend() {
+	need localmount
+	after net
+}

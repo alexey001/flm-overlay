@@ -1,0 +1,19 @@
+#!/sbin/openrc-run
+# Distributed under the terms of the GNU General Public License v2
+
+description="FreeUnit - dynamic web application server (NGINX Unit fork)"
+
+command="/usr/sbin/unitd"
+command_args="--no-daemon ${UNITD_OPTS}"
+supervisor="supervise-daemon"
+pidfile="/run/nginx-unit.pid"
+
+depend() {
+	need localmount
+	use logger net
+}
+
+start_pre() {
+	checkpath -d -m 0750 -o nginx-unit:nginx-unit /var/lib/nginx-unit /var/log/nginx-unit
+	checkpath -d -m 0700 -o nginx-unit:nginx-unit /var/tmp/nginx-unit
+}

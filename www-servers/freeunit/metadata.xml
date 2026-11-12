@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>root@gnt1.local</email>
+		<name>gnt1 local overlay</name>
+	</maintainer>
+	<longdescription>
+		FreeUnit is the community-maintained LTS fork of NGINX Unit
+		(archived by F5 in October 2025). A dynamic multi-language web
+		application server: runs PHP (and other runtimes) applications
+		plus static assets in a single runtime, configured via a REST
+		API with live reloads. This build provides the core unitd daemon
+		plus PHP application modules for selected dev-lang/php slots.
+		FreeUnit is a drop-in replacement for www-servers/nginx-unit:
+		same unitd binary, paths and user; the two packages block each
+		other.
+	</longdescription>
+	<upstream>
+		<doc>https://docs.freeunit.org/</doc>
+		<remote-id type="github">freeunitorg/freeunit</remote-id>
+	</upstream>
+	<use>
+		<flag name="ssl">Enable TLS support via OpenSSL (--openssl)</flag>
+	</use>
+</pkgmetadata>

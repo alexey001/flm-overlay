@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>root@gnt1.local</email>
+		<name>gnt1 local overlay</name>
+	</maintainer>
+	<longdescription>
+		NGINX Unit is a dynamic multi-language web application server. It runs
+		Python, PHP, Perl, Go, JavaScript, Ruby and Java application code in a
+		single runtime and natively serves static assets. Configuration is done
+		via a REST API and applied live without restarts. This build provides
+		the core unitd daemon plus PHP application modules for the selected
+		dev-lang/php slots (linked against the embed SAPI of each slot).
+	</longdescription>
+	<upstream>
+		<doc>https://unit.nginx.org/</doc>
+		<remote-id type="github">nginx/unit</remote-id>
+	</upstream>
+	<use>
+		<flag name="ssl">Enable TLS support via OpenSSL (--openssl)</flag>
+	</use>
+</pkgmetadata>

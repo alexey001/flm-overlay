@@ -1,0 +1,21 @@
+#!/sbin/openrc-run
+
+supervisor="supervise-daemon"
+# OpenRC-сервис Aspia Router: демон работает в foreground (без аргументов),
+# поэтому запускаем через supervise-daemon с автоперезапуском.
+
+description="Aspia Router: assigns identifiers to peers and routes traffic to bypass NAT"
+
+command="/usr/bin/aspia_router"
+command_user="aspia:aspia"
+output_logger="logger -t aspia-router -p daemon.info"
+error_logger="logger -t aspia-router -p daemon.err"
+
+# переменные из conf.d не экспортируются автоматически — экспортируем явно
+export ASPIA_LOG_TO_STDOUT="${ASPIA_LOG_TO_STDOUT:-1}"
+export ASPIA_LOG_TO_FILE="${ASPIA_LOG_TO_FILE:-0}"
+
+depend() {
+	need localmount
+	after net
+}

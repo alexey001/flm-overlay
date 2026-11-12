@@ -1,0 +1,5 @@
+# /etc/conf.d/consul
+# Доп. аргументы агента (после конфигов /etc/consul.d/*.hcl):
+#CONSUL_OPTS=""
+# Пользователь запуска (uid/gid acct-user/consul):
+#CONSUL_USER="consul:consul"

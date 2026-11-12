@@ -1,0 +1,6 @@
+# /etc/conf.d/vault
+# Доп. аргументы сервера (после /etc/vault.d/vault.hcl):
+#VAULT_OPTS=""
+# Пользователь запуска (uid/gid acct-user/vault); vault с mlock требует
+# CapabilityIPC_LOCK — см. elog пакета:
+#VAULT_USER="vault:vault"

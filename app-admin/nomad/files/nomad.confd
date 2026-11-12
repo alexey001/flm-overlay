@@ -1,0 +1,2 @@
+# Дополнительные аргументы nomad agent (см. nomad agent -help)
+NOMAD_OPTS=""

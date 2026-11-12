@@ -1,0 +1,6 @@
+# /etc/conf.d/nginx-unit
+
+# Дополнительные аргументы unitd. Пути (state/control/log/tmp) компилируются
+# внутрь бинарника при сборке — полный список показывает `unitd -h`.
+# Пример: UNITD_OPTS="--log-level info"
+UNITD_OPTS=""

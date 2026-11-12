@@ -1,0 +1,601 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index fd53cff..f8a27d2 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -73,24 +73,43 @@ endif()
+ 
+ set(CMAKE_SKIP_BUILD_RPATH ON)
+ 
+-find_package(Qt6 CONFIG REQUIRED Core Gui Network PrintSupport Test Widgets Xml LinguistTools Svg)
+-find_package(Qt6DeviceDiscoverySupportPrivate CONFIG REQUIRED)
+-find_package(Qt6FbSupportPrivate CONFIG REQUIRED)
+-
+-find_package(asio CONFIG REQUIRED)
+-find_package(CURL CONFIG REQUIRED)
+-find_package(GTest CONFIG REQUIRED)
+-find_package(JPEG REQUIRED)
+-find_package(libyuv CONFIG REQUIRED)
+-find_package(miniupnpc CONFIG REQUIRED)
++option(ASPIA_SERVER_ONLY "Build only the router and relay daemons (no client/host)" OFF)
++
++if (ASPIA_SERVER_ONLY)
++    # The server daemons (router/relay) use only QtCore + QtNetwork and do not
++    # reference the codec/desktop/upnp parts of aspia_base, so the media and
++    # gui-related dependencies are not needed for a server build.
++    find_package(Qt6 CONFIG REQUIRED Core Network DBus)
++else()
++    find_package(Qt6 CONFIG REQUIRED Core Gui Network PrintSupport Test Widgets Xml LinguistTools Svg)
++endif()
++
++# Gentoo: system libraries instead of vcpkg ports. asio is header-only (standalone),
++# curl/sqlite/jpeg/icu come through built-in CMake Find modules, the rest via pkg-config.
++find_path(ASPIA_ASIO_INCLUDE_DIR asio.hpp REQUIRED)
++if(NOT TARGET asio::asio)
++    add_library(asio::asio INTERFACE IMPORTED)
++    set_target_properties(asio::asio PROPERTIES
++        INTERFACE_INCLUDE_DIRECTORIES "${ASPIA_ASIO_INCLUDE_DIR}")
++endif()
++
++find_package(CURL REQUIRED)             # CURL::libcurl
+ find_package(OpenSSL REQUIRED)
+-find_package(Opus CONFIG REQUIRED)
+-find_package(protobuf CONFIG REQUIRED)
+-find_package(unofficial-libvpx CONFIG REQUIRED)
+-find_package(unofficial-libwebm CONFIG REQUIRED)
+-find_package(unofficial-nayuki-qr-code-generator CONFIG REQUIRED)
+-find_package(unofficial-sqlite3 CONFIG REQUIRED)
+-find_package(zstd CONFIG REQUIRED)
++find_package(protobuf CONFIG REQUIRED)  # protobuf::libprotobuf-lite, protobuf::protoc
++find_package(SQLite3 REQUIRED)          # SQLite::SQLite3
++find_package(PkgConfig REQUIRED)
++
++if (NOT ASPIA_SERVER_ONLY)
++    find_package(GTest CONFIG REQUIRED)
++    find_package(JPEG REQUIRED)
++    pkg_check_modules(VPX REQUIRED IMPORTED_TARGET vpx)
++    pkg_check_modules(OPUS REQUIRED IMPORTED_TARGET opus)
++    pkg_check_modules(MINIUPNPC REQUIRED IMPORTED_TARGET libminiupnpc)
++    pkg_check_modules(YUV REQUIRED IMPORTED_TARGET libyuv)
++    pkg_check_modules(WEBM REQUIRED IMPORTED_TARGET libwebm)
++    pkg_check_modules(QRCODEGEN REQUIRED IMPORTED_TARGET qrcodegencpp)
++    pkg_check_modules(ZSTD REQUIRED IMPORTED_TARGET libzstd)
++endif()
+ 
+ if (WIN32)
+     find_package(Qt6EntryPointPrivate CONFIG REQUIRED)
+@@ -113,8 +132,10 @@ if (ANDROID)
+ endif()
+ 
+ if (LINUX)
+-    find_package(Qt6XcbQpaPrivate CONFIG REQUIRED)
+     find_package(Qt6DBus CONFIG REQUIRED)
++    if (NOT ASPIA_SERVER_ONLY)
++        find_package(Qt6XcbQpaPrivate CONFIG REQUIRED)
++    endif()
+     find_package(ICU REQUIRED COMPONENTS uc)
+ endif()
+ 
+@@ -156,32 +177,28 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+ 
+-# libwebm headers cross-include via "common/webmids.h", so we need
+-# <prefix>/include/webm on the search path in addition to <prefix>/include.
+-get_target_property(_libwebm_inc_dirs unofficial::libwebm::libwebm INTERFACE_INCLUDE_DIRECTORIES)
+-set(_libwebm_extra_includes)
+-foreach(_dir IN LISTS _libwebm_inc_dirs)
+-    list(APPEND _libwebm_extra_includes "${_dir}/webm")
+-endforeach()
+-set_property(TARGET unofficial::libwebm::libwebm APPEND PROPERTY
+-             INTERFACE_INCLUDE_DIRECTORIES ${_libwebm_extra_includes})
+-
+-enable_testing()
++include(CTest)   # BUILD_TESTING=ON by default; -DBUILD_TESTING=OFF skips tests and GTest
+ add_subdirectory(source)
+ 
+-file(GLOB TS_FILES_LIST "source/translations/*.ts")
+-get_target_property(LUPDATE_PATH Qt::lupdate IMPORTED_LOCATION)
+-set(SOURCE_FILES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/source")
++if (NOT ASPIA_SERVER_ONLY)
++    file(GLOB TS_FILES_LIST "source/translations/*.ts")
++    get_target_property(LUPDATE_PATH Qt::lupdate IMPORTED_LOCATION)
++    set(SOURCE_FILES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/source")
+ 
+-add_custom_target(update_translations
+-    COMMAND ${LUPDATE_PATH} -I ${SOURCE_FILES_DIR} -extensions ui,cc,cpp,h ${SOURCE_FILES_DIR} -ts ${TS_FILES_LIST}
+-    WORKING_DIRECTORY "${SOURCE_FILES_DIR}"
+-    SOURCES ${TS_FILES_LIST}
+-    VERBATIM
+-    COMMAND_EXPAND_LISTS)
++    add_custom_target(update_translations
++        COMMAND ${LUPDATE_PATH} -I ${SOURCE_FILES_DIR} -extensions ui,cc,cpp,h ${SOURCE_FILES_DIR} -ts ${TS_FILES_LIST}
++        WORKING_DIRECTORY "${SOURCE_FILES_DIR}"
++        SOURCES ${TS_FILES_LIST}
++        VERBATIM
++        COMMAND_EXPAND_LISTS)
+ 
+-qt_add_translation(QM_FILES_LIST ${TS_FILES_LIST})
+-qt_add_resources(aspia_common "common_translations" PREFIX "tr" BASE "${CMAKE_CURRENT_BINARY_DIR}" FILES "${QM_FILES_LIST}")
++    qt_add_translation(QM_FILES_LIST ${TS_FILES_LIST})
++    qt_add_resources(aspia_common "common_translations" PREFIX "tr" BASE "${CMAKE_CURRENT_BINARY_DIR}" FILES "${QM_FILES_LIST}")
++
++    message(STATUS "Source files: ${SOURCE_FILES_DIR}")
++    message(STATUS "TS files: ${TS_FILES_LIST}")
++    message(STATUS "QM files: ${QM_FILES_LIST}")
++endif()
+ 
+ message(STATUS "Source files: ${SOURCE_FILES_DIR}")
+ message(STATUS "TS files: ${TS_FILES_LIST}")
+diff --git a/source/CMakeLists.txt b/source/CMakeLists.txt
+index 9075d74..4c9c361 100644
+--- a/source/CMakeLists.txt
++++ b/source/CMakeLists.txt
+@@ -50,31 +50,40 @@ add_definitions(#-DQT_NO_CAST_FROM_ASCII
+                 -DQT_NO_CAST_FROM_BYTEARRAY
+                 -DQT_USE_QSTRINGBUILDER)
+ 
+-set(QT_COMMON_LIBS
+-    Qt6::Core
+-    Qt6::Gui
+-    Qt6::Network
+-    Qt6::Widgets
+-    Qt6::Svg
+-    Qt6::Xml)
+-
+-if (NOT ANDROID)
+-    list(APPEND QT_COMMON_LIBS
+-        Qt6::DeviceDiscoverySupportPrivate
+-        Qt6::FbSupportPrivate
+-        Qt6::QICOPlugin
+-        Qt6::PrintSupport Qt6::PrintSupport_resources_1 Qt6::PrintSupport_resources_2
+-        Qt6::Widgets_resources_1 Qt6::Widgets_resources_2)
+-endif()
++if (ASPIA_SERVER_ONLY)
++    # The server daemons use QtCore + QtNetwork only (verified against the
++    # reachable source set): no Gui/Widgets/Svg/Xml/PrintSupport, no platform
++    # plugin modules, no QtDBus (the systemd service controller shells out
++    # through QProcess).
++    set(QT_COMMON_LIBS
++        Qt6::Core
++        Qt6::Network
++        Qt6::DBus)   # sys_info_linux.cc (authenticator data) uses QDBus
++    set(QT_PLATFORM_LIBS "")
++else()
++    set(QT_COMMON_LIBS
++        Qt6::Core
++        Qt6::Gui
++        Qt6::Network
++        Qt6::Widgets
++        Qt6::Svg
++        Qt6::Xml)
++
++    if (NOT ANDROID)
++        list(APPEND QT_COMMON_LIBS
++            Qt6::PrintSupport Qt6::PrintSupport_resources_1 Qt6::PrintSupport_resources_2
++            Qt6::Widgets_resources_1 Qt6::Widgets_resources_2)
++    endif()
+ 
+-if (WIN32)
+-    set(QT_PLATFORM_LIBS Qt6::QWindowsIntegrationPlugin)
+-endif()
++    if (WIN32)
++        set(QT_PLATFORM_LIBS Qt6::QWindowsIntegrationPlugin)
++    endif()
+ 
+-if (LINUX)
+-    set(QT_PLATFORM_LIBS
+-        Qt6::XcbQpaPrivate
+-        Qt6::DBus)
++    if (LINUX)
++        # Qt6::XcbQpaPrivate (vcpkg static platform plugin) is dropped: system Qt
++        # ships the xcb platform plugin separately from the development package.
++        set(QT_PLATFORM_LIBS Qt6::DBus)
++    endif()
+ endif()
+ 
+ if (APPLE)
+@@ -83,21 +92,30 @@ if (APPLE)
+         Qt6::QMacStylePlugin)
+ endif()
+ 
+-set(THIRD_PARTY_LIBS
+-    CURL::libcurl
+-    protobuf::libprotobuf-lite
+-    zstd::libzstd_static
+-    OpenSSL::Crypto
+-    OpenSSL::SSL
+-    Opus::opus
+-    unofficial::libwebm::libwebm
+-    unofficial::libvpx::libvpx
+-    enet
+-    miniupnpc::miniupnpc
+-    unofficial::nayuki-qr-code-generator::nayuki-qr-code-generator
+-    unofficial::sqlite3::sqlite3
+-    vterm
+-    yuv)
++if (ASPIA_SERVER_ONLY)
++    set(THIRD_PARTY_LIBS
++        CURL::libcurl
++        protobuf::libprotobuf-lite
++        OpenSSL::Crypto
++        OpenSSL::SSL
++        SQLite::SQLite3)
++else()
++    set(THIRD_PARTY_LIBS
++        CURL::libcurl
++        protobuf::libprotobuf-lite
++        PkgConfig::ZSTD
++        OpenSSL::Crypto
++        OpenSSL::SSL
++        PkgConfig::OPUS
++        PkgConfig::WEBM
++        PkgConfig::VPX
++        enet
++        PkgConfig::MINIUPNPC
++        PkgConfig::QRCODEGEN
++        SQLite::SQLite3
++        vterm
++        PkgConfig::YUV)
++endif()
+ 
+ if (LINUX OR APPLE)
+     list(APPEND THIRD_PARTY_LIBS ICU::uc)
+@@ -224,16 +242,22 @@ endif()
+ 
+ add_subdirectory(tools)
+ add_subdirectory(base)
+-add_subdirectory(common)
++if (NOT ASPIA_SERVER_ONLY)
++    # aspia_common is linked only by the client/host targets, which a server
++    # build does not compile.
++    add_subdirectory(common)
++endif()
+ add_subdirectory(proto)
+ add_subdirectory(third_party)
+ 
+-if (NOT ASPIA_HOST_ONLY)
++if (NOT ASPIA_HOST_ONLY AND NOT ASPIA_SERVER_ONLY)
+     add_subdirectory(client)
+ endif()
+ 
+ if (NOT ANDROID)
+-    add_subdirectory(drivers)
++    if (NOT ASPIA_HOST_ONLY AND NOT ASPIA_SERVER_ONLY)
++        add_subdirectory(drivers)
++    endif()
+ 
+     if (NOT ASPIA_HOST_ONLY)
+         add_subdirectory(relay)
+@@ -242,5 +266,7 @@ if (NOT ANDROID)
+ endif()
+ 
+ if (WIN32 OR LINUX OR APPLE OR ANDROID)
+-    add_subdirectory(host)
++    if (NOT ASPIA_SERVER_ONLY)
++        add_subdirectory(host)
++    endif()
+ endif()
+diff --git a/source/base/CMakeLists.txt b/source/base/CMakeLists.txt
+index 24f014b..c98a6e5 100644
+--- a/source/base/CMakeLists.txt
++++ b/source/base/CMakeLists.txt
+@@ -147,11 +147,13 @@ list(APPEND SOURCE_BASE_TESTS
+     string_util_unittest.cc
+     tests_main.cc)
+ 
+-include(codec/sources.cmake)
++if (NOT ASPIA_SERVER_ONLY)
++    include(codec/sources.cmake)
++    include(desktop/sources.cmake)
++    include(ipc/sources.cmake)
++endif()
+ include(crypto/sources.cmake)
+-include(desktop/sources.cmake)
+ include(files/sources.cmake)
+-include(ipc/sources.cmake)
+ include(net/sources.cmake)
+ include(peer/sources.cmake)
+ include(sql/sources.cmake)
+@@ -163,13 +165,46 @@ if (WIN32)
+ endif()
+ 
+ if (LINUX)
+-    include(linux/sources.cmake)
++    if (ASPIA_SERVER_ONLY)
++        # Only LinuxUtil is referenced by the server daemons (update checker);
++        # the rest of base/linux pulls X11/QtDBus-session/pulseaudio headers.
++        collect_sources(SOURCE_BASE_LINUX linux/linux_util.cc linux/linux_util.h)
++    else()
++        include(linux/sources.cmake)
++    endif()
+ endif()
+ 
+ if (APPLE)
+     include(mac/sources.cmake)
+ endif()
+ 
++if (ASPIA_SERVER_ONLY)
++    # Compile out the base parts referenced only by the client/host GUI apps
++    # (media codecs, screen capture, enet/upnp p2p, D-Bus session tracking):
++    # the server daemons never reference them, so neither the code nor the
++    # third-party dependencies behind it are needed. The SysInfo chain
++    # (sys_info*.cc, drive_smart, physical_drive_reader) is KEPT: the peer
++    # authenticators report OS name/host name to the other side.
++    list(REMOVE_ITEM SOURCE_BASE
++        gui_application.cc gui_application.h
++        os_account.cc os_account.h
++        security_log.cc security_log.h
++        edid.cc edid.h
++        event_enumerator.cc event_enumerator.h
++        power_controller.cc power_controller.h
++        smbios_parser.cc smbios_parser.h
++        event_enumerator_linux.cc event_enumerator_linux.h)
++    list(REMOVE_ITEM SOURCE_BASE_TESTS
++        drive_smart_unittest.cc
++        edid_unittest.cc
++        os_account_unittest.cc
++        smbios_parser_unittest.cc)
++# collect_sources() stores absolute paths: filter by name instead of REMOVE_ITEM.
++    list(FILTER SOURCE_BASE_CRYPTO EXCLUDE REGEX "/os_crypt_linux\.cc$")
++    list(FILTER SOURCE_BASE_NET EXCLUDE REGEX "/(udp_channel|upnp_port_mapper|gateway_port_mapper|pcp_port_mapper)\.(cc|h)$")
++    list(FILTER SOURCE_BASE_PEER EXCLUDE REGEX "/(stun_peer|relay_peer|relay_peer_manager)\.(cc|h)$")
++endif()
++
+ source_group("" FILES ${SOURCE_BASE} ${SOURCE_BASE_TESTS})
+ source_group(codec FILES ${SOURCE_BASE_CODEC} ${SOURCE_BASE_CODEC_TESTS})
+ source_group(crypto FILES ${SOURCE_BASE_CRYPTO} ${SOURCE_BASE_CRYPTO_TESTS})
+@@ -222,12 +257,14 @@ endif()
+ if (LINUX)
+     set(BASE_PLATFORM_LIBS stdc++fs ${CMAKE_DL_LIBS})
+ 
+-    # Xlib and the extensions (DAMAGE/SHM/XFIXES/RANDR/XTEST) are linked directly from the static vcpkg
+-    # ports (base/linux/libx11.cc etc. call them straight, no more dlopen). The same static archives back
+-    # Qt's xcb platform plugin, so the linker pulls one copy and there is no duplicate-libX11 state.
+-    find_package(X11 REQUIRED)
+-    list(APPEND BASE_PLATFORM_LIBS
+-        X11::X11 X11::Xext X11::Xdamage X11::Xfixes X11::Xi X11::Xrandr X11::Xtst)
++    if (NOT ASPIA_SERVER_ONLY)
++        # Xlib and the extensions (DAMAGE/SHM/XFIXES/RANDR/XTEST) are linked directly from the static vcpkg
++        # ports (base/linux/libx11.cc etc. call them straight, no more dlopen). The same static archives back
++        # Qt's xcb platform plugin, so the linker pulls one copy and there is no duplicate-libX11 state.
++        find_package(X11 REQUIRED)
++        list(APPEND BASE_PLATFORM_LIBS
++            X11::X11 X11::Xext X11::Xdamage X11::Xfixes X11::Xi X11::Xrandr X11::Xtst)
++    endif()
+ endif()
+ 
+ if (ANDROID)
+@@ -256,30 +293,32 @@ if (APPLE)
+     set(BASE_TESTS_PLATFORM_LIBS ${FOUNDATION_LIB})
+ endif()
+ 
+-add_executable(aspia_base_tests
+-    ${SOURCE_BASE_TESTS}
+-    ${SOURCE_BASE_CODEC_TESTS}
+-    ${SOURCE_BASE_CRYPTO_TESTS}
+-    ${SOURCE_BASE_DESKTOP_TESTS}
+-    ${SOURCE_BASE_FILES_TESTS}
+-    ${SOURCE_BASE_NET_TESTS}
+-    ${SOURCE_BASE_PEER_TESTS}
+-    ${SOURCE_BASE_SQL_TESTS}
+-    ${SOURCE_BASE_THREADING_TESTS}
+-    ${SOURCE_BASE_UPDATE_TESTS}
+-    ${SOURCE_BASE_WIN_TESTS})
+-target_link_libraries(aspia_base_tests PRIVATE
+-    aspia_base
+-    aspia_proto
+-    GTest::gtest
+-    Qt6::Test
+-    ${BASE_TESTS_PLATFORM_LIBS}
+-    ${THIRD_PARTY_LIBS}
+-    ${QT_COMMON_LIBS}
+-    ${QT_PLATFORM_LIBS})
+-set_property(TARGET aspia_base_tests PROPERTY AUTOMOC ON)
+-set_property(TARGET aspia_base_tests PROPERTY AUTOUIC ON)
+-set_property(TARGET aspia_base_tests PROPERTY AUTORCC ON)
+-qt_import_plugins(aspia_base_tests INCLUDE "" EXCLUDE "" INCLUDE_BY_TYPE "" EXCLUDE_BY_TYPE imageformats)
++if (BUILD_TESTING)
++    add_executable(aspia_base_tests
++        ${SOURCE_BASE_TESTS}
++        ${SOURCE_BASE_CODEC_TESTS}
++        ${SOURCE_BASE_CRYPTO_TESTS}
++        ${SOURCE_BASE_DESKTOP_TESTS}
++        ${SOURCE_BASE_FILES_TESTS}
++        ${SOURCE_BASE_NET_TESTS}
++        ${SOURCE_BASE_PEER_TESTS}
++        ${SOURCE_BASE_SQL_TESTS}
++        ${SOURCE_BASE_THREADING_TESTS}
++        ${SOURCE_BASE_UPDATE_TESTS}
++        ${SOURCE_BASE_WIN_TESTS})
++    target_link_libraries(aspia_base_tests PRIVATE
++        aspia_base
++        aspia_proto
++        GTest::gtest
++        Qt6::Test
++        ${BASE_TESTS_PLATFORM_LIBS}
++        ${THIRD_PARTY_LIBS}
++        ${QT_COMMON_LIBS}
++        ${QT_PLATFORM_LIBS})
++    set_property(TARGET aspia_base_tests PROPERTY AUTOMOC ON)
++    set_property(TARGET aspia_base_tests PROPERTY AUTOUIC ON)
++    set_property(TARGET aspia_base_tests PROPERTY AUTORCC ON)
++    qt_import_plugins(aspia_base_tests INCLUDE "" EXCLUDE "" INCLUDE_BY_TYPE "" EXCLUDE_BY_TYPE imageformats)
+ 
+-add_test(NAME aspia_base_tests COMMAND aspia_base_tests)
++    add_test(NAME aspia_base_tests COMMAND aspia_base_tests)
++endif()
+diff --git a/source/base/core_application.cc b/source/base/core_application.cc
+index 8819dfe..ee0b499 100644
+--- a/source/base/core_application.cc
++++ b/source/base/core_application.cc
+@@ -34,7 +34,7 @@ volatile auto g_powerEventType = qRegisterMetaType<CoreApplication::PowerEvent>(
+ #include "base/win/message_window.h"
+ #endif // defined(Q_OS_WINDOWS)
+ 
+-#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
++#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID) && defined(ASPIA_HAVE_LIBSYSTEMD)
+ #include <QSocketNotifier>
+ #include "base/linux/libsystemd.h"
+ #endif // defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
+@@ -318,7 +318,7 @@ CoreApplication::CoreApplication(int& argc, char* argv[])
+     ui_thread_->start();
+ #endif // defined(Q_OS_WINDOWS)
+ 
+-#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
++#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID) && defined(ASPIA_HAVE_LIBSYSTEMD)
+     // Watch the active session on the local seat via logind and report changes, so the service can
+     // follow the console session (user switching, display-manager greeter) like the WTS session
+     // notifications on Windows.
+@@ -363,7 +363,7 @@ CoreApplication::~CoreApplication()
+         ui_thread_->stop();
+ #endif // defined(Q_OS_WINDOWS)
+ 
+-#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
++#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID) && defined(ASPIA_HAVE_LIBSYSTEMD)
+     if (session_notifier_)
+         session_notifier_->setEnabled(false);
+ 
+diff --git a/source/base/core_application.h b/source/base/core_application.h
+index 2a76a03..e22b155 100644
+--- a/source/base/core_application.h
++++ b/source/base/core_application.h
+@@ -20,13 +20,13 @@
+ #define BASE_CORE_APPLICATION_H
+ 
+ #include <QCoreApplication>
++#include <QSocketNotifier>
+ 
+ #include <memory>
+ 
+ #include "base/scoped_qpointer.h"
+ #include "base/threading/worker.h"
+ 
+-class QSocketNotifier;
+ class MessageWindow;
+ class Thread;
+ class EventMonitor;
+diff --git a/source/base/session_id.cc b/source/base/session_id.cc
+index d86fd87..304099a 100644
+--- a/source/base/session_id.cc
++++ b/source/base/session_id.cc
+@@ -26,7 +26,7 @@
+ #include "base/win/session_info.h"
+ #endif // defined(Q_OS_WINDOWS)
+ 
+-#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
++#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID) && defined(ASPIA_HAVE_LIBSYSTEMD)
+ #include <cstdlib>
+ #include <cstring>
+ #include "base/linux/libsystemd.h"
+@@ -55,7 +55,7 @@ SessionId activeConsoleSessionId()
+ {
+ #if defined(Q_OS_WINDOWS)
+     return WTSGetActiveConsoleSessionId();
+-#elif defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
++#elif defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID) && defined(ASPIA_HAVE_LIBSYSTEMD)
+     // The session currently shown on the local console of the primary seat - a logged-in user or
+     // the display manager greeter. Identified by its VT number, which changes when the user is
+     // switched, so callers can detect the change and follow the active session.
+@@ -132,7 +132,7 @@ ConsoleUserState consoleUserState()
+         return ConsoleUserState::ACTIVE;
+ 
+     return ConsoleUserState::NO_USER;
+-#elif defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
++#elif defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID) && defined(ASPIA_HAVE_LIBSYSTEMD)
+     // seat0's active session exists both for a logged-in user and for the display-manager greeter;
+     // the session class ("user" vs "greeter") tells them apart.
+     char* session = nullptr;
+diff --git a/source/relay/CMakeLists.txt b/source/relay/CMakeLists.txt
+index a01ff40..78a3955 100644
+--- a/source/relay/CMakeLists.txt
++++ b/source/relay/CMakeLists.txt
+@@ -93,16 +93,18 @@ set_property(TARGET aspia_relay PROPERTY AUTOMOC ON)
+ set_property(TARGET aspia_relay PROPERTY AUTOUIC ON)
+ set_property(TARGET aspia_relay PROPERTY AUTORCC ON)
+ 
+-add_executable(aspia_relay_tests ${SOURCE_RELAY_TESTS} ${SOURCE_RELAY_WORKERS_TESTS})
++if (BUILD_TESTING)
++    add_executable(aspia_relay_tests ${SOURCE_RELAY_TESTS} ${SOURCE_RELAY_WORKERS_TESTS})
+ 
+-target_link_libraries(aspia_relay_tests
+-    aspia_relay_core
+-    GTest::gtest
+-    ${THIRD_PARTY_LIBS})
++    target_link_libraries(aspia_relay_tests
++        aspia_relay_core
++        GTest::gtest
++        ${THIRD_PARTY_LIBS})
+ 
+-set_property(TARGET aspia_relay_tests PROPERTY AUTOMOC ON)
+-set_property(TARGET aspia_relay_tests PROPERTY AUTOUIC ON)
+-set_property(TARGET aspia_relay_tests PROPERTY AUTORCC ON)
+-qt_import_plugins(aspia_relay_tests INCLUDE "" EXCLUDE "" INCLUDE_BY_TYPE "" EXCLUDE_BY_TYPE imageformats)
++    set_property(TARGET aspia_relay_tests PROPERTY AUTOMOC ON)
++    set_property(TARGET aspia_relay_tests PROPERTY AUTOUIC ON)
++    set_property(TARGET aspia_relay_tests PROPERTY AUTORCC ON)
++    qt_import_plugins(aspia_relay_tests INCLUDE "" EXCLUDE "" INCLUDE_BY_TYPE "" EXCLUDE_BY_TYPE imageformats)
+ 
+-add_test(NAME aspia_relay_tests COMMAND aspia_relay_tests)
++    add_test(NAME aspia_relay_tests COMMAND aspia_relay_tests)
++endif()
+diff --git a/source/router/CMakeLists.txt b/source/router/CMakeLists.txt
+index 5675127..59a7846 100644
+--- a/source/router/CMakeLists.txt
++++ b/source/router/CMakeLists.txt
+@@ -123,17 +123,19 @@ set_property(TARGET aspia_router PROPERTY AUTOMOC ON)
+ set_property(TARGET aspia_router PROPERTY AUTOUIC ON)
+ set_property(TARGET aspia_router PROPERTY AUTORCC ON)
+ 
+-add_executable(aspia_router_tests ${SOURCE_ROUTER_TESTS} ${SOURCE_ROUTER_HANDLERS_TESTS}
+-    ${SOURCE_ROUTER_WORKERS_TESTS})
++if (BUILD_TESTING)
++    add_executable(aspia_router_tests ${SOURCE_ROUTER_TESTS} ${SOURCE_ROUTER_HANDLERS_TESTS}
++        ${SOURCE_ROUTER_WORKERS_TESTS})
+ 
+-target_link_libraries(aspia_router_tests
+-    aspia_router_core
+-    GTest::gtest
+-    ${THIRD_PARTY_LIBS})
++    target_link_libraries(aspia_router_tests
++        aspia_router_core
++        GTest::gtest
++        ${THIRD_PARTY_LIBS})
+ 
+-set_property(TARGET aspia_router_tests PROPERTY AUTOMOC ON)
+-set_property(TARGET aspia_router_tests PROPERTY AUTOUIC ON)
+-set_property(TARGET aspia_router_tests PROPERTY AUTORCC ON)
+-qt_import_plugins(aspia_router_tests INCLUDE "" EXCLUDE "" INCLUDE_BY_TYPE "" EXCLUDE_BY_TYPE imageformats)
++    set_property(TARGET aspia_router_tests PROPERTY AUTOMOC ON)
++    set_property(TARGET aspia_router_tests PROPERTY AUTOUIC ON)
++    set_property(TARGET aspia_router_tests PROPERTY AUTORCC ON)
++    qt_import_plugins(aspia_router_tests INCLUDE "" EXCLUDE "" INCLUDE_BY_TYPE "" EXCLUDE_BY_TYPE imageformats)
+ 
+-add_test(NAME aspia_router_tests COMMAND aspia_router_tests)
++    add_test(NAME aspia_router_tests COMMAND aspia_router_tests)
++endif()
+diff --git a/source/third_party/CMakeLists.txt b/source/third_party/CMakeLists.txt
+index 2142acc..aea257e 100644
+--- a/source/third_party/CMakeLists.txt
++++ b/source/third_party/CMakeLists.txt
+@@ -20,7 +20,7 @@ if (APPLE)
+     add_subdirectory(portaudio)
+ endif()
+ 
+-if (LINUX)
++if (LINUX AND NOT ASPIA_SERVER_ONLY)
+     # Wayland client stubs for wlr-screencopy (used by the wlroots screen capturer).
+     add_subdirectory(wlr-protocols)
+     # Wayland client stubs for xdg-output (used to read the compositor's monitor layout).
+diff --git a/source/tools/qtprotoc/CMakeLists.txt b/source/tools/qtprotoc/CMakeLists.txt
+index 1529e9e..b44da7c 100644
+--- a/source/tools/qtprotoc/CMakeLists.txt
++++ b/source/tools/qtprotoc/CMakeLists.txt
+@@ -33,4 +33,7 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+ endif()
+ 
+ add_executable(qtprotoc main.cc)
+-target_link_libraries(qtprotoc PRIVATE protobuf::libprotoc)
++# protobuf::libprotobuf explicitly: the protobuf-config shipped by Gentoo marks
++# the libprotobuf dependency of libprotoc PRIVATE, and --as-needed then fails
++# with "DSO missing from command line" when only libprotoc is linked.
++target_link_libraries(qtprotoc PRIVATE protobuf::libprotoc protobuf::libprotobuf)

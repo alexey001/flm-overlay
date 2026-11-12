@@ -1,0 +1,14 @@
+BDEPEND=virtual/pkgconfig
+DEFINED_PHASES=configure install
+DEPEND=dev-libs/libpcre2:= ssl? ( dev-libs/openssl:= ) php_targets_php8-2? ( dev-lang/php:8.2[embed] ) php_targets_php8-3? ( dev-lang/php:8.3[embed] ) php_targets_php8-4? ( dev-lang/php:8.4[embed] ) php_targets_php8-5? ( dev-lang/php:8.5[embed] )
+DESCRIPTION=Community LTS fork of NGINX Unit application server, with PHP modules
+EAPI=8
+HOMEPAGE=https://freeunit.support/ https://docs.freeunit.org/ https://github.com/freeunitorg/freeunit
+IUSE=debug ssl php_targets_php8-2 php_targets_php8-3 php_targets_php8-4 php_targets_php8-5
+KEYWORDS=~amd64
+LICENSE=Apache-2.0
+RDEPEND=dev-libs/libpcre2:= ssl? ( dev-libs/openssl:= ) php_targets_php8-2? ( dev-lang/php:8.2[embed] ) php_targets_php8-3? ( dev-lang/php:8.3[embed] ) php_targets_php8-4? ( dev-lang/php:8.4[embed] ) php_targets_php8-5? ( dev-lang/php:8.5[embed] ) acct-user/nginx-unit acct-group/nginx-unit !www-servers/nginx-unit
+RESTRICT=test
+SLOT=0
+SRC_URI=https://github.com/freeunitorg/freeunit/archive/refs/tags/1.37.0.tar.gz -> freeunit-1.37.0.tar.gz
+_md5_=336fbb4c5ea8968a7120c374d261ed26

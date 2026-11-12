@@ -1,0 +1,25 @@
+#!/sbin/openrc-run
+# Copyright 1999-2026 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+description="HashiCorp Nomad agent (server/client)"
+
+command="/usr/bin/nomad"
+command_args="agent -config=/etc/nomad.d ${NOMAD_OPTS}"
+supervisor=supervise-daemon
+pidfile="/run/nomad.pid"
+output_log="/var/log/nomad/nomad.log"
+error_log="/var/log/nomad/nomad.err"
+rc_ulimit="-n 65536"
+
+depend() {
+	need net
+	use dns logger podman
+	after firewall podman
+}
+
+start_pre() {
+	checkpath -d -m 0750 -o root:root /var/lib/nomad /var/log/nomad
+	ebegin "Validating Nomad configuration"
+	/usr/bin/nomad config validate /etc/nomad.d
+}

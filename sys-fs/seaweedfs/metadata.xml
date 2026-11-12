@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>root@gnt1.local</email>
+		<name>Local overlay</name>
+	</maintainer>
+	<upstream>
+		<remote-id type="github">seaweedfs/seaweedfs</remote-id>
+	</upstream>
+	<longdescription>
+		SeaweedFS is an Apache-2.0 licensed distributed storage system.
+		The single binary "weed" provides master, volume, filer, FUSE mount
+		and S3-compatible gateway roles.
+	</longdescription>
+</pkgmetadata>

@@ -1,0 +1,17 @@
+#!/sbin/openrc-run
+# HashiCorp Vault в foreground (сервер; конфиг /etc/vault.d/vault.hcl).
+# Инициализация (vault operator init) — вручную после старта.
+
+description="HashiCorp Vault - secrets management"
+
+command="/usr/bin/vault"
+command_args="server -config=/etc/vault.d ${VAULT_OPTS}"
+command_user="${VAULT_USER:-vault:vault}"
+supervise_daemon_args="-d /var/lib/vault"
+output_logger="logger -t vault -p daemon.info"
+error_logger="logger -t vault -p daemon.err"
+
+depend() {
+	need localmount
+	after net
+}
