@@ -3,7 +3,7 @@
 
 EAPI=8
 
-# HashiCorp-стек по паттерну app-admin/nomad (локальный overlay): deps в
+# HashiCorp-стек по паттерну sys-cluster/nomad (локальный overlay): deps в
 # vendor-тарболле, OpenRC initd (systemd-юниты апстрима не используются),
 # лицензия BUSL-1.1 — см. /etc/portage/package.license
 inherit go-module

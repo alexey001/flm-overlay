@@ -1,0 +1,14 @@
+BDEPEND=>=dev-vcs/git-1.8.2.1[curl]
+DEFINED_PHASES=install unpack
+DESCRIPTION=Kubler - build minimal Docker/Podman images from Gentoo packages
+EAPI=8
+HOMEPAGE=https://github.com/edannenberg/kubler
+INHERIT=git-r3
+KEYWORDS=~amd64
+LICENSE=BSD-2
+PROPERTIES=live
+RDEPEND=app-shells/bash app-misc/jq dev-vcs/git app-containers/podman
+RESTRICT=test
+SLOT=0
+_eclasses_=git-r3	e6c2f983e006e805160436c75a0c1562
+_md5_=fae780fd56926b5ebd83c62bb4314b3a

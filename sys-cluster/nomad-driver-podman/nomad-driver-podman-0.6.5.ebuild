@@ -17,7 +17,7 @@ RESTRICT="test"
 
 BDEPEND=">=dev-lang/go-1.25.8"
 
-RDEPEND="app-admin/nomad"
+RDEPEND="sys-cluster/nomad"
 
 src_compile() {
 	ego build -trimpath -o nomad-driver-podman . || die

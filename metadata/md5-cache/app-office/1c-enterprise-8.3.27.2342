@@ -1,0 +1,13 @@
+DEFINED_PHASES=install nofetch postinst unpack
+DESCRIPTION=1C:Enterprise 8.3 server (common, server, ws, crs) from the official deb64 distribution
+EAPI=8
+HOMEPAGE=https://releases.1c.ru
+IUSE=crs nls +server +ws
+KEYWORDS=~amd64
+LICENSE=all-rights-reserved
+RDEPEND=acct-group/grp1cv8 acct-user/usr1cv8 server? ( app-crypt/mit-krb5 )
+REQUIRED_USE=crs? ( server ws )
+RESTRICT=fetch mirror strip
+SLOT=8.3
+SRC_URI=deb64_8_3_27_2342.zip
+_md5_=b60518eb36e805fd95662d9dbc526a13
