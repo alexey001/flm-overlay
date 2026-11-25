@@ -1,5 +1,6 @@
 # flm-overlay
 
+[![pkgcheck](https://github.com/alexey001/flm-overlay/actions/workflows/pkgcheck.yml/badge.svg)](https://github.com/alexey001/flm-overlay/actions/workflows/pkgcheck.yml)
 Личный Gentoo overlay для серверной инфраструктуры: платформа 1С, HashiCorp-стек,
 PHP-стек, инструменты контейнерной сборки. Ebuild'ы заточены под конкретную
 инфраструктуру (`~amd64`) и не претендуют на стабильность для всех сценариев.
