@@ -1,12 +1,13 @@
 acct-group
 acct-user
 app-backup
+app-crypt
 app-office
 dev-db
+dev-php
 dev-util
+net-libs
 net-misc
 sys-cluster
 sys-fs
 www-servers
-dev-php
-app-crypt
