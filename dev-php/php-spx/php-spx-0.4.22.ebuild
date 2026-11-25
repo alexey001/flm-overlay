@@ -19,7 +19,7 @@ SLOT="0"
 KEYWORDS="~amd64"
 IUSE=""
 
-DEPEND="sys-libs/zlib"
+DEPEND="virtual/zlib"
 RDEPEND="${DEPEND}"
 
 DOCS=( README.md CHANGELOG.md THIRD-PARTY-LICENSES.md )
