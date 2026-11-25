@@ -18,4 +18,7 @@ jobs:
       - name: Run pkgcheck
         uses: pkgcore/pkgcheck-action@v1
         with:
-          args: --keywords=-RedundantVersion,-NonsolvableDepsInDev
+          # UnstatedIuse: false positive — проверка идёт только по нашим локальным
+          # профилям pgr-min/pgr-min-musl (минимальные rootfs-профили без
+          # features/prefix и арх-набора x86)
+          args: --keywords=-RedundantVersion,-NonsolvableDepsInDev,-UnstatedIuse
