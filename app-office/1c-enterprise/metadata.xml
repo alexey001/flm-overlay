@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>root@gnt1.local</email>
+		<name>Local overlay</name>
+	</maintainer>
+	<longdescription>Проприетарная платформа 1С:Предприятие 8.3. Дистрибутив свободно не распространяется: RESTRICT="fetch", tarball кладётся в /var/cache/distfiles вручную.</longdescription>
+</pkgmetadata>

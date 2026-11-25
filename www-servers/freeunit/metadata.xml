@@ -3,7 +3,7 @@
 <pkgmetadata>
 	<maintainer type="person">
 		<email>root@gnt1.local</email>
-		<name>gnt1 local overlay</name>
+		<name>Local overlay</name>
 	</maintainer>
 	<longdescription>
 		FreeUnit is the community-maintained LTS fork of NGINX Unit

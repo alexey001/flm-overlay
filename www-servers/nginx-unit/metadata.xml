@@ -3,7 +3,7 @@
 <pkgmetadata>
 	<maintainer type="person">
 		<email>root@gnt1.local</email>
-		<name>gnt1 local overlay</name>
+		<name>Local overlay</name>
 	</maintainer>
 	<longdescription>
 		NGINX Unit is a dynamic multi-language web application server. It runs
